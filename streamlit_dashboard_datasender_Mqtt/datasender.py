@@ -97,7 +97,14 @@ def on_message(client, userdata, msg):
 def connect_mqtt(broker, port, target_ip):
     """Connect to MQTT broker"""
     try:
-        client = mqtt.Client(f"streamlit-sender-{int(time.time())}")
+        # Create MQTT client with callback API version
+        try:
+            # For paho-mqtt >= 2.0
+            client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, f"streamlit-sender-{int(time.time())}")
+        except AttributeError:
+            # For paho-mqtt < 2.0
+            client = mqtt.Client(f"streamlit-sender-{int(time.time())}")
+        
         client.on_connect = on_connect
         client.on_disconnect = on_disconnect
         client.on_message = on_message
