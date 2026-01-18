@@ -169,8 +169,9 @@ if st.session_state.mqtt_connected:
     col1, col2 = st.columns(2)
     
     with col1:
-        st.text_input("Target System IP", value=st.session_state.target_ip, key="target_ip",
+        target_ip_input = st.text_input("Target System IP", value=st.session_state.target_ip, key="target_ip",
                                  help="IP address of the system running the website dashboard")
+        st.session_state.target_ip = target_ip_input
     
     with col2:
         st.write("")
