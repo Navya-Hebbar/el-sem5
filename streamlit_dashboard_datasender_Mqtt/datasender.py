@@ -208,14 +208,22 @@ def load_kdd_data():
     """Load KDD test dataset from file or embedded source"""
     import os
     
-    # Try loading from file first (local directory)
-    file_path = 'KDDTest-21.txt'
-    if os.path.exists(file_path):
-        try:
-            df = pd.read_csv(file_path, header=None, names=KDD_COLUMNS)
-            return df
-        except:
-            pass
+    # Try multiple possible file paths
+    possible_paths = [
+        'KDDTest-21.txt',  # Local/Streamlit Cloud root
+        os.path.join(os.path.dirname(__file__), 'KDDTest-21.txt'),  # Same directory as script
+        '../KDDTest-21.txt',  # Parent directory
+    ]
+    
+    for file_path in possible_paths:
+        if os.path.exists(file_path):
+            try:
+                st.info(f"✅ Loaded KDD dataset from {file_path}")
+                df = pd.read_csv(file_path, header=None, names=KDD_COLUMNS)
+                return df
+            except Exception as e:
+                st.warning(f"Could not load from {file_path}: {e}")
+                continue
     
     # If file not found, create sample data for testing
     st.warning("⚠️ KDD dataset file not found. Using sample data.")
