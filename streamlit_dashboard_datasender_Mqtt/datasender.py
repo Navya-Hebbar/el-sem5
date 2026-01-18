@@ -392,7 +392,7 @@ if kdd_df is not None:
                         
                         progress = sent_count / len(sample_df)
                         progress_bar.progress(progress)
-                        status_text.text(f"Sending: {sent_count}/{len(sample_df)} packets ({attack_count} attacks)...")
+                        status_text.text(f"Sending: {sent_count}/{len(sample_df)} packets...")
                         time.sleep(0.05)
                     except Exception as e:
                         st.error(f"Error: {e}")
@@ -405,7 +405,6 @@ if kdd_df is not None:
                 <div class="success-box">
                     <h2 style="margin: 0;">TRANSMISSION COMPLETE</h2>
                     <p style="font-size: 1.5em; margin: 10px 0;"><strong>{sent_count}</strong> Packets Sent Successfully</p>
-                    <p style="margin: 5px 0;">({attack_count} attacks detected)</p>
                 </div>
                 """, unsafe_allow_html=True)
         else:
