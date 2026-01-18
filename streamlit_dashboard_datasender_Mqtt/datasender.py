@@ -73,7 +73,6 @@ if 'mqtt_client' not in st.session_state:
     st.session_state.sent_count = 0
     st.session_state.last_packet_type = None
     st.session_state.local_ip = get_local_ip()
-    st.session_state.target_ip = "127.0.0.1"
 
 # MQTT Callbacks - NO Streamlit operations
 def on_connect(client, userdata, flags, rc):
@@ -169,9 +168,8 @@ if st.session_state.mqtt_connected:
     col1, col2 = st.columns(2)
     
     with col1:
-        target_ip_input = st.text_input("Target System IP", value=st.session_state.target_ip, key="target_ip",
+        st.text_input("Target System IP", value="127.0.0.1", key="target_ip",
                                  help="IP address of the system running the website dashboard")
-        st.session_state.target_ip = target_ip_input
     
     with col2:
         st.write("")
