@@ -5,6 +5,10 @@ import time
 from models.classifier import get_classifier
 from collections import defaultdict
 from datetime import datetime
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from firebase_logger import get_firebase_logger
 
 # Global statistics
 network_stats = {
@@ -21,6 +25,7 @@ def process_packet_data(data, socketio):
     """Process packet data (used by both MQTT and HTTP injection)"""
     try:
         classifier = get_classifier()
+        firebase_logger = get_firebase_logger()
         
         # Prepare features for classification (20 selected features required by trained model)
         features = {
@@ -67,29 +72,6 @@ def process_packet_data(data, socketio):
             'confidence': classification['confidence'],
             'is_attack': is_attack,
             'timestamp': data.get('timestamp', datetime.now().isoformat()),
-            # Include all ML features used for classification
-            'ml_features': {
-                'src_bytes': features['src_bytes'],
-                'dst_bytes': features['dst_bytes'],
-                'count': features['count'],
-                'srv_count': features['srv_count'],
-                'serror_rate': features['serror_rate'],
-                'srv_serror_rate': features['srv_serror_rate'],
-                'rerror_rate': features.get('rerror_rate', 0),
-                'same_srv_rate': features['same_srv_rate'],
-                'diff_srv_rate': features['diff_srv_rate'],
-                'dst_host_count': features['dst_host_count'],
-                'dst_host_serror_rate': features['dst_host_serror_rate'],
-                'dst_host_same_srv_rate': features['dst_host_same_srv_rate'],
-                'dst_host_diff_srv_rate': features['dst_host_diff_srv_rate'],
-                'dst_host_same_src_port_rate': features['dst_host_same_src_port_rate'],
-                'dst_host_srv_diff_host_rate': features['dst_host_srv_diff_host_rate'],
-                'dst_host_srv_count': features['dst_host_srv_count'],
-                'dst_host_rerror_rate': features['dst_host_rerror_rate'],
-                'protocol_type': features['protocol_type'],
-                'service': features['service'],
-                'flag': features['flag'],
-            }
         }
         
         # Track recent attacks
@@ -102,6 +84,9 @@ def process_packet_data(data, socketio):
         if current_time - network_stats['last_packet_time'] > 1:
             network_stats['packets_per_sec'] = network_stats['total_packets']
             network_stats['last_packet_time'] = current_time
+        
+        # 🔥 LOG TO FIREBASE (non-blocking)
+        firebase_logger.log_packet(enriched_data)
         
         # Emit to frontend
         socketio.emit("network_logs", enriched_data)
