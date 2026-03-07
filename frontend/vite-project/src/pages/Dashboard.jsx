@@ -14,6 +14,23 @@ export default function Dashboard() {
     attack_count: 0,
     total_packets: 0,
   });
+  const [latestDecision, setLatestDecision] = useState(null);
+
+  const normalizeAction = (action) => {
+    const value = String(action || "allow").toLowerCase();
+    if (value === "drop_packet" || value === "drop") return "DROP";
+    if (value === "block_ip" || value === "block") return "BLOCK";
+    if (value === "alert") return "ALERT";
+    return "ALLOW";
+  };
+
+  const actionColor = (action) => {
+    const normalized = normalizeAction(action);
+    if (normalized === "BLOCK") return "text-rose-400";
+    if (normalized === "DROP") return "text-amber-300";
+    if (normalized === "ALERT") return "text-cyan-300";
+    return "text-emerald-400";
+  };
 
   useEffect(() => {
     // Fetch initial stats
@@ -39,7 +56,40 @@ export default function Dashboard() {
       });
     });
 
-    return () => socket.off("stats_update");
+    // Fetch latest IPS event (if available) to fill right-side detection summary.
+    fetch("http://localhost:5000/api/ips/events?limit=1")
+      .then((res) => res.json())
+      .then((payload) => {
+        const ev = payload?.events?.[0];
+        if (ev) {
+          setLatestDecision({
+            anomalyType: ev?.ml?.attack_type || "normal",
+            aiScore: ev?.ml?.confidence ?? 0,
+            action: ev?.decision?.action || "allow",
+            risk: ev?.decision?.risk ?? 0,
+            zeroDayScore: ev?.zero_day?.anomaly_score ?? 0,
+            updatedAt: ev?.timestamp,
+          });
+        }
+      })
+      .catch(() => {});
+
+    // Live IPS decision stream.
+    socket.on("ips_event", (ev) => {
+      setLatestDecision({
+        anomalyType: ev?.ml?.attack_type || "normal",
+        aiScore: ev?.ml?.confidence ?? 0,
+        action: ev?.decision?.action || "allow",
+        risk: ev?.decision?.risk ?? 0,
+        zeroDayScore: ev?.zero_day?.anomaly_score ?? 0,
+        updatedAt: ev?.timestamp,
+      });
+    });
+
+    return () => {
+      socket.off("stats_update");
+      socket.off("ips_event");
+    };
   }, []);
 
   return (
@@ -133,6 +183,46 @@ export default function Dashboard() {
                   </span>
                 </div>
               </div>
+            </div>
+
+            <div className="border-t border-gray-700 pt-4 mt-4">
+              <h3 className="text-sm text-gray-400 mb-3">Latest Detection Decision</h3>
+              {latestDecision ? (
+                <div className="space-y-2 text-xs text-gray-300">
+                  <div className="flex justify-between">
+                    <span>Anomaly Type:</span>
+                    <span className="text-cyan-300 uppercase font-semibold">
+                      {latestDecision.anomalyType}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>AI Score:</span>
+                    <span className="text-cyan-300">{Number(latestDecision.aiScore).toFixed(2)}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Zero-Day Score:</span>
+                    <span className="text-cyan-300">{Number(latestDecision.zeroDayScore).toFixed(4)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Risk:</span>
+                    <span className="text-cyan-300">{Number(latestDecision.risk).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Classification:</span>
+                    <span className={`font-bold ${actionColor(latestDecision.action)}`}>
+                      {normalizeAction(latestDecision.action)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Decision Time:</span>
+                    <span className="text-cyan-300">
+                      {latestDecision.updatedAt ? new Date(latestDecision.updatedAt).toLocaleTimeString() : "N/A"}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-gray-500">No IPS decisions yet.</p>
+              )}
             </div>
           </div>
         </div>

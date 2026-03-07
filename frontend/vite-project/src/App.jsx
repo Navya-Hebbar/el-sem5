@@ -8,6 +8,7 @@ import Footer from "./components/Footer";
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
 import NetworkLogs from "./pages/NetworkLogs";
+import Live from "./pages/Live";
 
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -39,6 +40,8 @@ export default function App() {
             <MLFeatures />
           ) : activePage === "About System" ? (
             <AboutSystem />
+          ) : activePage === "Live" ? (
+            <Live />
           ) : activePage === "Attack Reports" ? ( // ENSURE THIS MATCHES SIDEBAR STRING
             <AttackReport />
           ) : (

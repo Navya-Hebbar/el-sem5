@@ -41,13 +41,14 @@ export default function Sidebar({ open, setOpen, setActivePage }) {
         <nav className="flex flex-col gap-2 px-4 text-sm">
           {[
             "Dashboard", 
+            "Live",
             //"Traffic Analysis", 
             //"Attack Reports", 
             //"Model Performance", 
             //"ML Features",
             "Export Logs", 
             //"Settings", 
-            "About System"
+            //"About System"
           ].map(item => (
             <button
               key={item}
